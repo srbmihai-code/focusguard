@@ -7,16 +7,19 @@ import { Picker } from '@react-native-picker/picker'
 interface AddPopUpProps {
   visible: boolean
   onClose: () => void
-  date: string
+  date?: string
+  weekDay?: string
+  index?: number
 }
 
-const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date }) => {
+const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, index }) => {
   const [name, setName] = useState('')
   const [startHour, setStartHour] = useState('')
   const [startMinute, setStartMinute] = useState('')
   const [endHour, setEndHour] = useState('')
   const [endMinute, setEndMinute] = useState('')
   const [notifications, setNotifications] = useState(false)
+  const [phoneBlocked, setPhoneBlocked] = useState(false)
   const [notificationTime, setNotificationTime] = useState('5')
   const [breaksCount, setBreaksCount] = useState('0 pauze')
   const [breaksDuration, setBreaksDuration] = useState(5)
@@ -24,8 +27,41 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date }) => {
   const [repetition, setRepetition] = useState('one-time')
   const [steps, setSteps] = useState<string[]>([]);
   const [newStep, setNewStep] = useState('');
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedWeekDay, setSelectedWeekDay] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      if (!date) {
+        const storedData = await AsyncStorage.getItem("task");
+        const tasks = storedData ? JSON.parse(storedData) : [];
+        const task = tasks[index];
 
+        if (task) {
+          setName(task.name || "");
+          setStartHour(task.startHour.toString() || "");
+          setStartMinute(task.startMinute.toString() || "");
+          setEndHour(task.endHour.toString() || "");
+          setEndMinute(task.endMinute.toString() || "");
+          setNotifications(task.notifications ?? false);
+          setNotificationTime(task.notificationTime || "5");
+          setBreaksCount(task.breaksCount || "0 pauze");
+          setBreaksDuration(task.breaksDuration ?? 5);
+          setDetails(task.details || "");
+          setRepetition(task.repetition || "one-time");
+          setSteps(task.steps || []);
+        }
 
+        if (task?.day) setSelectedDate(task.day);
+        if (task?.weekDay) setSelectedWeekDay(task.weekDay);
+      }
+      if (typeof date !== "undefined") {
+        setSelectedDate(date);
+      }
+      if (typeof weekDay !== "undefined") {
+        setSelectedWeekDay(weekDay);
+      }
+    })();
+  }, [])
   const addStep = () => {
     if (newStep.trim() !== '') {
       setSteps([...steps, newStep.trim()]);
@@ -79,25 +115,42 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date }) => {
     onClose(true);
 
   };
+  const handleDelete = async (close: boolean) => {
+    const storedData = await AsyncStorage.getItem("task");
+    const tasks = storedData ? JSON.parse(storedData) : [];
+
+    if (typeof index !== "undefined" && tasks[index]) {
+      tasks.splice(index, 1)
+      await AsyncStorage.setItem("task", JSON.stringify(tasks));
+    }
+    if (close)
+      onClose();
+
+  };
   async function updateTaskStorage() {
+    handleDelete(false)
     try {
+      console.log(phoneBlocked)
       const storedData = await AsyncStorage.getItem('task');
       let taskObject = storedData ? JSON.parse(storedData) : [];
       const task = {
         name,
-        startHour,
-        startMinute,
-        endHour,
-        endMinute,
+        startHour: parseInt(startHour),
+        startMinute: parseInt(startMinute),
+        endHour: parseInt(endHour),
+        endMinute: parseInt(endMinute),
         notifications,
         notificationTime,
         breaksCount,
         breaksDuration,
+        phoneBlocked,
         details,
         repetition,
         steps,
         startDate: Date.now(),
-        endDate: null
+        endDate: null,
+        weekDay: selectedWeekDay,
+        day: typeof date !== "undefined" ? `${selectedDate} ${new Date().getFullYear()}` : selectedDate
       };
       taskObject = [...taskObject, task]
       console.log(taskObject)
@@ -109,147 +162,163 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date }) => {
   };
 
 
-return (
-  <Modal
-    isVisible={visible}
-    onBackdropPress={onClose}
-    swipeDirection="down"
-    propagateSwipe={true}
-  >
-    <ScrollView>
-      <View style={styles.overlay}>
-        <View style={styles.popup}>
-          <Text style={styles.title}>Adaugă activitate / obiectiv</Text>
+  return (
+    <Modal
+      isVisible={visible}
+      onBackdropPress={onClose}
+      swipeDirection="down"
+      propagateSwipe={true}
+    >
+      <ScrollView>
+        <View style={styles.overlay}>
+          <View style={styles.popup}>
+            <Text style={styles.title}>Adaugă activitate / obiectiv</Text>
 
-          <TextInput style={styles.input} placeholder="Nume activitate" value={name} onChangeText={setName} />
-          <View style={styles.row}>
-            <Text>De la:</Text>
-            <TextInput
-              style={styles.inputSmall}
-              placeholder="Oră"
-              keyboardType="numeric"
-              value={startHour}
-              onChangeText={setStartHour}
-              maxLength={2}
-            />
-            <Text>:</Text>
-            <TextInput
-              style={styles.inputSmall}
-              placeholder="Minut"
-              keyboardType="numeric"
-              value={startMinute}
-              onChangeText={setStartMinute}
-              maxLength={2}
-            />
-          </View>
-
-          <View style={styles.row}>
-            <Text>Până la:</Text>
-            <TextInput
-              style={styles.inputSmall}
-              placeholder="Oră"
-              keyboardType="numeric"
-              value={endHour}
-              onChangeText={setEndHour}
-              maxLength={2}
-            />
-            <Text>:</Text>
-            <TextInput
-              style={styles.inputSmall}
-              placeholder="Minut"
-              keyboardType="numeric"
-              value={endMinute}
-              onChangeText={setEndMinute}
-              maxLength={2}
-            />
-          </View>
-
-          <View style={styles.row}>
-            <Text>Notificare</Text>
-            <Switch value={notifications} onValueChange={setNotifications} />
-            {notifications && (
-              <Picker selectedValue={notificationTime} onValueChange={setNotificationTime} style={styles.picker}>
-                {['5', '10', '15', '30'].map((time) => (
-                  <Picker.Item key={time} label={`${time} min înainte`} value={time} />
-                ))}
-              </Picker>
-            )}
-          </View>
-
-          <View style={styles.stepsContainer}>
-            <Text style={styles.label}>Primii pași</Text>
-            <Text style={styles.smallText}>Aici puteți nota primii pași pentru a începe mai ușor și a avea mai multe șanse să finalizați obiectivul.</Text>
-            <View style={styles.stepInputRow}>
+            <TextInput style={styles.input} placeholder="Nume activitate" value={name} onChangeText={setName} spellCheck={false}/>
+            <View style={styles.row}>
+              <Text>De la:</Text>
               <TextInput
-                style={styles.input}
-                placeholder="Adaugă un pas"
-                value={newStep}
-                onChangeText={setNewStep}
+                style={styles.inputSmall}
+                placeholder="Oră"
+                keyboardType="numeric"
+                spellCheck={false}
+                value={startHour}
+                onChangeText={setStartHour}
+                maxLength={2}
               />
-              <TouchableOpacity style={styles.addButton} onPress={addStep}>
-                <Text style={styles.addButtonText}>+</Text>
-              </TouchableOpacity>
+              <Text>:</Text>
+              <TextInput
+                style={styles.inputSmall}
+                placeholder="Minut"
+                keyboardType="numeric"
+                value={startMinute}
+                spellCheck={false}
+                onChangeText={setStartMinute}
+                maxLength={2}
+              />
             </View>
 
-            {steps.map((step, index) => (
-              <View key={index} style={styles.stepItem}>
-                <Text style={styles.stepText}>{step}</Text>
-                <TouchableOpacity onPress={() => removeStep(index)}>
-                  <Text style={styles.removeButton}>✖</Text>
+            <View style={styles.row}>
+              <Text>Până la:</Text>
+              <TextInput
+                style={styles.inputSmall}
+                placeholder="Oră"
+                keyboardType="numeric"
+                value={endHour}
+                spellCheck={false}
+                onChangeText={setEndHour}
+                maxLength={2}
+              />
+              <Text>:</Text>
+              <TextInput
+                style={styles.inputSmall}
+                placeholder="Minut"
+                keyboardType="numeric"
+                spellCheck={false}
+                value={endMinute}
+                onChangeText={setEndMinute}
+                maxLength={2}
+              />
+            </View>
+
+            <View style={styles.row}>
+              <Text>Notificare</Text>
+              <Switch value={notifications} onValueChange={setNotifications} />
+
+              {notifications && (
+                <Picker selectedValue={notificationTime} onValueChange={setNotificationTime} style={styles.picker}>
+                  {['5', '10', '15', '30'].map((time) => (
+                    <Picker.Item key={time} label={`${time} min înainte`} value={time} />
+                  ))}
+                </Picker>
+              )}
+            </View>
+            <Text>Telefon Blocat (task-ul este marcat ca esuat daca iesiti din aplicatie)</Text>
+            <Switch value={phoneBlocked} onValueChange={setPhoneBlocked} />
+
+
+            <View style={styles.stepsContainer}>
+              <Text style={styles.label}>Primii pași</Text>
+              <Text style={styles.smallText}>Aici puteți nota primii pași pentru a începe mai ușor și a avea mai multe șanse să finalizați obiectivul.</Text>
+              <View style={styles.stepInputRow}>
+                <TextInput
+                  style={styles.input}
+                  spellCheck={false}
+                  autoCorrect={false}
+                  placeholder="Adaugă un pas"
+                  value={newStep}
+                  onChangeText={setNewStep}
+                />
+                <TouchableOpacity style={styles.addButton} onPress={addStep}>
+                  <Text style={styles.addButtonText}>+</Text>
                 </TouchableOpacity>
               </View>
-            ))}
-          </View>
 
-          <View style={styles.row}>
-            <Text>Număr de pauze:</Text>
-            <Picker
-              selectedValue={breaksCount}
-              onValueChange={setBreaksCount}
-              style={styles.picker}
-            >
-              {['0 pauze', '1 pauză', '2 pauze', '3 pauze'].map((count) => (
-                <Picker.Item key={count} label={count} value={count} />
+              {steps.map((step, index) => (
+                <View key={index} style={styles.stepItem}>
+                  <Text style={styles.stepText}>{step}</Text>
+                  <TouchableOpacity onPress={() => removeStep(index)}>
+                    <Text style={styles.removeButton}>✖</Text>
+                  </TouchableOpacity>
+                </View>
               ))}
-            </Picker>
-          </View>
-          {breaksCount[0] !== '0' &&
+            </View>
+
             <View style={styles.row}>
-              <Text>Durata pauzei:</Text>
+              <Text>Număr de pauze:</Text>
               <Picker
-                selectedValue={breaksDuration}
-                onValueChange={setBreaksDuration}
+                selectedValue={breaksCount}
+                onValueChange={setBreaksCount}
                 style={styles.picker}
               >
-                {['5', '10', '15', '20', '25', '30'].map((duration) => (
-                  <Picker.Item key={duration} label={`${duration} min`} value={duration} />
+                {['0 pauze', '1 pauză', '2 pauze', '3 pauze'].map((count) => (
+                  <Picker.Item key={count} label={count} value={count} />
                 ))}
               </Picker>
-            </View>}
+            </View>
+            {breaksCount[0] !== '0' &&
+              <View style={styles.row}>
+                <Text>Durata pauzei:</Text>
+                <Picker
+                  selectedValue={breaksDuration}
+                  onValueChange={setBreaksDuration}
+                  style={styles.picker}
+                >
+                  {['5', '10', '15', '20', '25', '30'].map((duration) => (
+                    <Picker.Item key={duration} label={`${duration} min`} value={duration} />
+                  ))}
+                </Picker>
+              </View>}
 
-          <TextInput style={[styles.input, styles.largeInput]} placeholder="Detalii opționale" multiline value={details} onChangeText={setDetails} />
+            <TextInput style={[styles.input, styles.largeInput]} spellCheck={false} placeholder="Detalii opționale" multiline value={details} onChangeText={setDetails} />
 
-          <View style={styles.row}>
-            <Text>Repetiție</Text>
-            <Picker selectedValue={repetition} onValueChange={setRepetition} style={styles.picker}>
-              <Picker.Item label="Doar azi" value="one-time" />
-              <Picker.Item label="Aceeași zi a săptămânii" value="same-weekday" />
-              <Picker.Item label="Zile lucrătoare" value="weekdays" />
-              <Picker.Item label="În fiecare zi" value="everyday" />
-            </Picker>
+            <View style={styles.row}>
+              <Text>Repetiție</Text>
+              <Picker selectedValue={repetition} onValueChange={setRepetition} style={styles.picker}>
+                <Picker.Item label={`Doar ziua asta (${selectedDate})`} value="one-time" />
+                <Picker.Item label="Aceeași zi a săptămânii" value="same-weekday" />
+                <Picker.Item label="Zile lucrătoare" value="weekdays" />
+                <Picker.Item label="În fiecare zi" value="everyday" />
+              </Picker>
+            </View>
+            <TouchableOpacity onPress={handleSubmit} style={styles.addTaskButton}>
+              <Text style={styles.closeText}>Adauga</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => onClose(false)} style={styles.closeButton}>
+              <Text style={styles.closeText}>Anuleaza</Text>
+            </TouchableOpacity>
+            {typeof index !== "undefined" &&
+              <TouchableOpacity onPress={() => handleDelete(true)} style={styles.closeButton}>
+                <Text style={styles.closeText}>Sterge</Text>
+              </TouchableOpacity>
+            }
+
+
           </View>
-          <TouchableOpacity onPress={handleSubmit} style={styles.addTaskButton}>
-            <Text style={styles.closeText}>Adauga</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => onClose(false)} style={styles.closeButton}>
-            <Text style={styles.closeText}>Anuleaza</Text>
-          </TouchableOpacity>
-
         </View>
-      </View>
-    </ScrollView>
-  </Modal>
-);
+      </ScrollView>
+    </Modal>
+  );
 }
 
 export default AddPopUp;
@@ -331,12 +400,12 @@ const styles = StyleSheet.create({
   },
   label: {
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 15,
   },
   stepInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 15,
   },
   addButton: {
     backgroundColor: '#28a745',

@@ -56,17 +56,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   weekText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
+    color: "#333",
   },
   arrow: {
-    width: 30,
-    height: 30,
+    width: 28,
+    height: 28,
   },
   weekDay: {
-    paddingBottom: 10
-  }
+    paddingBottom: 12,
+    fontSize: 14,
+    color: "#555",
+  },
 });

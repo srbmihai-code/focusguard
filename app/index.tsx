@@ -4,8 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Hello from './Hello';
 import Day from './Day';
 import Week from './Week';
+import { router } from 'expo-router';
 
-export default function App() {
+export default function App({ navigation }: any) {
   const [hasSeenHelloPage, setHasSeenHelloPage] = useState<boolean | null | number>(null);
   const [dayOrWeek, setDayOrWeek] = useState<'day' | 'week'>('week');
 
@@ -53,6 +54,15 @@ export default function App() {
             >
               <Text style={styles.buttonText}>Program săptămână</Text>
             </TouchableOpacity>
+
+          <View style={styles.statisticsContainer}>
+            <TouchableOpacity
+              style={styles.statisticsButton}
+              onPress={() => router.push('/Statistics')}
+            >
+              <Text style={styles.statisticsButtonText}>💡</Text>
+            </TouchableOpacity>
+          </View>
           </View>
 
           {dayOrWeek === 'day' ? <Day /> : <Week />}
@@ -81,19 +91,21 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 6,
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    alignContent: 'center',
+    marginBottom: 8,
   },
   button: {
-    paddingVertical: 12,
-    paddingHorizontal: 6,
-    borderRadius: 10,
-    width: 150,
+    paddingVertical: 8,
+    paddingHorizontal: 1,
+    borderRadius: 6,
+    width: 100,
     alignItems: 'center',
-    marginHorizontal: 5,
+    justifyContent: 'center'
   },
   activeButton: {
     backgroundColor: '#4CAF50',
@@ -102,21 +114,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#DDDDDD',
   },
   buttonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#FFF',
   },
-  debugButton: {
-    marginTop: 20,
-    backgroundColor: '#FF5733',
-    paddingVertical: 10,
+  statisticsContainer: {
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  statisticsButton: {
+    backgroundColor: '#1E90FF',
+    paddingVertical: 16,
     paddingHorizontal: 20,
-    borderRadius: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  statisticsButtonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 20,
+  },
+  debugButton: {
+    marginTop: 8,
+    backgroundColor: '#FF5733',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     alignSelf: 'center',
   },
   debugButtonText: {
     color: '#FFF',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 10,
   },
 });

@@ -1,13 +1,11 @@
 import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import AddPopUp from './AddPopUp';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const Add = ({ date }: { date: string }) => {
+const Add = ({ weekDay, date }: { weekDay: string, date: string }) => {
   const [popUp, setPopUp] = useState(false);
   const [notificationVisible, setNotificationVisible] = useState(false);
-  const insets = useSafeAreaInsets();
-  
+
   function closePopup(added: boolean) {
     setPopUp(false);
     if (added) {
@@ -15,18 +13,21 @@ const Add = ({ date }: { date: string }) => {
       setTimeout(() => setNotificationVisible(false), 1000);
     }
   }
-  
+
   return (
     <>
       <View style={styles.container}>
         <TouchableOpacity onPress={() => setPopUp(true)}>
           <Image source={require("@/assets/images/plus.png")} style={styles.image} />
         </TouchableOpacity>
-        <AddPopUp visible={popUp} onClose={closePopup} date={date} />
+        {popUp &&
+          <AddPopUp visible={popUp} onClose={closePopup} date={date} weekDay={weekDay} />
+        }
+
       </View>
-      
+
       {notificationVisible && (
-        <View 
+        <View
           style={
             styles.notificationContainer
           }
@@ -45,7 +46,7 @@ export default Add;
 
 const styles = StyleSheet.create({
   container: {
-    
+
   },
   image: {
     width: 30,

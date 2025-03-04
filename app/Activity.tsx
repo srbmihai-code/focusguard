@@ -1,15 +1,23 @@
-import React from "react";
-import { View, Text, Image, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import AddPopUp from "./AddPopUp";
 
 interface ActivityProps {
   name: string;
   time: string;
   isPhoneBlocked: boolean;
+  index: number
 }
 
-const Activity: React.FC<ActivityProps> = ({ name, time, isPhoneBlocked }) => {
+const Activity: React.FC<ActivityProps> = ({ name, time, isPhoneBlocked, index }) => {
+  const [popUp, setPopUp] = useState(false);
   return (
+    <TouchableOpacity onPress={() => setPopUp(true)}>
     <View style={styles.container}>
+
+      {
+        popUp &&  <AddPopUp visible={popUp} onClose={() => setPopUp(false)} index={index}/>
+      }
       <View>
         <Text style={styles.title}>{name}</Text>
         <Text style={styles.time}>{time}</Text>
@@ -20,7 +28,9 @@ const Activity: React.FC<ActivityProps> = ({ name, time, isPhoneBlocked }) => {
           style={styles.image}
         />
       )}
+
     </View>
+    </TouchableOpacity>
   );
 };
 
@@ -35,7 +45,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowOffset: { width: 0, height: 1 },
     shadowRadius: 2,
-    width: 200,
+    width: 110,
     backgroundColor: "white",
   },
   title: {
