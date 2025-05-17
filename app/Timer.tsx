@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, AppState, FlatList, StyleSheet, TouchableOpacity, Button, ScrollView } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useLocalSearchParams } from "expo-router";
-
+import { queryUsageStats, EventFrequency } from "@brighthustle/react-native-usage-stats-manager";
 const Timer: React.FC = () => {
   const { taskIndex } = useLocalSearchParams<{ taskIndex: string }>();
   const [task, setTask] = useState<any>(null);
@@ -45,6 +45,7 @@ const Timer: React.FC = () => {
         checkBreaks();
       } else if (!timerExpired) {
         setTimerExpired(true);
+
         clearInterval(interval);
       }
     }, 1000);

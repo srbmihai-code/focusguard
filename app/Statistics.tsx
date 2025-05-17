@@ -11,11 +11,15 @@ interface TaskStat {
 
 interface Task {
   name: string;
+  startHour: number;
+  endHour: number;
+  startMinute: number;
+  endMinute: number;
 }
 
 const StatisticsPage: React.FC = () => {
   const [statistics, setStatistics] = useState<any[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [hourStats, setHourStats] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -23,42 +27,68 @@ const StatisticsPage: React.FC = () => {
         const storedTasks = await AsyncStorage.getItem('task');
         const parsedTasks: Task[] = storedTasks ? JSON.parse(storedTasks) : [];
 
-        const storedStats = await AsyncStorage.getItem('task_statistics');
-        const statsArray: TaskStat[][] = storedStats ? JSON.parse(storedStats) : [];
+        const existingStats = await AsyncStorage.getItem("task_statistics");
+        const statsArray: TaskStat[][] = existingStats ? JSON.parse(existingStats) : [];
 
-        const statsWithExtras = parsedTasks.map((task, index) => {
+        const statsWithAverages = parsedTasks.map((task, index) => {
           const taskStats = statsArray[index] || [];
 
-          if (taskStats.length === 0) return null;
+          if (taskStats.length > 0) {
+            const totalRatings = taskStats.reduce((sum, stat) => sum + stat.rating, 0);
+            const averageRating = totalRatings / taskStats.length;
 
-          const totalRatings = taskStats.reduce((sum, stat) => sum + stat.rating, 0);
-          const averageRating = totalRatings / taskStats.length;
+            const passedCount = taskStats.filter(stat => stat.passed).length;
+            const failedCount = taskStats.length - passedCount;
+            const passRate = (passedCount / taskStats.length) * 100;
 
-          const passedCount = taskStats.filter(stat => stat.passed).length;
-          const passRate = (passedCount / taskStats.length) * 100;
-
-
-          let streak = 0;
-          for (let i = taskStats.length - 1; i >= 0; i--) {
-            if (taskStats[i].passed) {
-              streak++;
-            } else {
-              break;
+            // Calculate current streak
+            let streak = 0;
+            for (let i = taskStats.length - 1; i >= 0; i--) {
+              if (taskStats[i].passed) {
+                streak++;
+              } else {
+                break;
+              }
             }
+
+            return {
+              taskName: task.name,
+              averageRating: averageRating.toFixed(1),
+              passRate: passRate.toFixed(1),
+              streak,
+              startHour: task.startHour,
+              endHour: task.endHour,
+            };
           }
 
-          return {
-            taskName: task.name,
-            averageRating: averageRating.toFixed(1),
-            passRate: passRate.toFixed(1),
-            streak,
-          };
+          return null;
         }).filter(stat => stat !== null);
 
-        setTasks(parsedTasks);
-        setStatistics(statsWithExtras);
+        // Build hour-based data
+        const hourMap: Record<number, number[]> = {};
+        statsWithAverages.forEach(stat => {
+          for (let h = stat.startHour; h <= stat.endHour; h++) {
+            if (!hourMap[h]) hourMap[h] = [];
+            hourMap[h].push(parseFloat(stat.averageRating));
+          }
+        });
+
+        const graphData = Array.from({ length: 24 }, (_, hour) => {
+          const ratings = hourMap[hour] || [];
+          const avg = ratings.length > 0
+            ? ratings.reduce((a, b) => a + b, 0) / ratings.length
+            : 0;
+          return {
+            hour,
+            label: `${hour}:00`,
+            value: parseFloat(avg.toFixed(2)),
+          };
+        }).filter(d => d.value > 0);
+
+        setStatistics(statsWithAverages);
+        setHourStats(graphData);
       } catch (error) {
-        console.error('Error fetching statistics:', error);
+        console.error("Error fetching statistics:", error);
       }
     };
 
@@ -68,7 +98,8 @@ const StatisticsPage: React.FC = () => {
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.statItem}>
       <Text style={styles.statText}>
-        {item.taskName}: {item.averageRating}⭐, {item.passRate}% completare{ item.streak !==0 && `, 🔥 ${item.streak}x streak`}
+        {item.taskName}: {item.averageRating}⭐, {item.passRate}% completare
+        {item.streak !== 0 && ` 🔥 ${item.streak}x streak`}
       </Text>
     </View>
   );
@@ -82,11 +113,26 @@ const StatisticsPage: React.FC = () => {
       <Text style={styles.header}>Statistici</Text>
 
       {statistics.length > 0 ? (
-        <FlatList
-          data={statistics}
-          renderItem={renderItem}
-          keyExtractor={(item, index) => index.toString()}
-        />
+        <>
+          <FlatList
+            data={statistics}
+            renderItem={renderItem}
+            keyExtractor={(_, index) => index.toString()}
+          />
+
+          <Text style={styles.subHeader}>Grafic medie stele/oră</Text>
+          <View style={styles.graphContainer}>
+            {hourStats.map((item, index) => (
+              <View key={index} style={styles.barWrapper}>
+                <Text style={styles.barLabel}>{item.label}</Text>
+                <View style={styles.barRow}>
+                  <View style={[styles.bar, { width: `${item.value * 20}%` }]} />
+                  <Text style={styles.barValue}>{item.value}⭐</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </>
       ) : (
         <Text style={styles.noDataText}>Nu exista statistici</Text>
       )}
@@ -97,7 +143,8 @@ const StatisticsPage: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingTop: 60,
+    paddingHorizontal: 16,
     backgroundColor: '#f0f0f0',
   },
   header: {
@@ -106,15 +153,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
+  subHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 16,
+  },
   statItem: {
     backgroundColor: '#fff',
-    padding: 12,
+    padding: 10,
     marginBottom: 10,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderRadius: 8,
     elevation: 3,
   },
   statText: {
@@ -125,7 +173,36 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     color: '#888',
-    marginTop: 30,
+    marginTop: 20,
+  },
+  graphContainer: {
+    marginTop: 10,
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 8,
+  },
+  barWrapper: {
+    marginBottom: 10,
+  },
+  barLabel: {
+    fontSize: 12,
+    color: '#555',
+    marginBottom: 4,
+  },
+  barRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bar: {
+    height: 12,
+    backgroundColor: '#4a90e2',
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  barValue: {
+    fontSize: 12,
+    color: '#333',
+    width: 50,
   },
   backButton: {
     position: 'absolute',
