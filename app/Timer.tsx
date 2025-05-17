@@ -67,14 +67,17 @@ const Timer: React.FC = () => {
     try {
       const existingStats = await AsyncStorage.getItem("task_statistics");
       const statsArray = existingStats ? JSON.parse(existingStats) : [];
-
+      
       const newEntry = {
-        taskIndex: taskIndex,
         rating: star,
         passed: !isTaskFailed,
       };
-
-      statsArray.push(newEntry);
+      
+      statsArray[taskIndex] = [
+        ...(statsArray[taskIndex] || []),
+        newEntry
+      ];
+      
       await AsyncStorage.setItem("task_statistics", JSON.stringify(statsArray));
     } catch (error) {
       console.error("Eroare la salvarea statisticilor:", error);

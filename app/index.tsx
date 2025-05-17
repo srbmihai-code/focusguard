@@ -74,6 +74,7 @@ export default function App({ navigation }: any) {
               try {
                 console.log('AsyncStorage has been reset');
                 await AsyncStorage.setItem('task', '[]');
+                await AsyncStorage.setItem('task_statistics', '');
                 await AsyncStorage.setItem('hasSeenHelloPage', 'null');
               } catch (e) {
                 console.error('Error resetting AsyncStorage:', e);

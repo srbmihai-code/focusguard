@@ -23,48 +23,41 @@ const StatisticsPage: React.FC = () => {
       try {
         const storedTasks = await AsyncStorage.getItem('task');
         const parsedTasks: Task[] = storedTasks ? JSON.parse(storedTasks) : [];
-
+  
         const existingStats = await AsyncStorage.getItem("task_statistics");
-        const statsArray: TaskStat[] = existingStats ? JSON.parse(existingStats) : [];
-        
-        const groupedStats: any = {};
-
-        statsArray.forEach(stat => {
-          const taskIndex = parseInt(stat.taskIndex);
-          if (!groupedStats[taskIndex]) {
-            groupedStats[taskIndex] = { ratings: [], passedCount: 0, failedCount: 0 };
+        const statsArray: TaskStat[][] = existingStats ? JSON.parse(existingStats) : [];
+  
+        const statsWithAverages = parsedTasks.map((task, index) => {
+          const taskStats = statsArray[index] || [];
+  
+          if (taskStats.length > 0) {
+            const totalRatings = taskStats.reduce((sum, stat) => sum + stat.rating, 0);
+            const averageRating = totalRatings / taskStats.length;
+  
+            const passedCount = taskStats.filter(stat => stat.passed).length;
+            const failedCount = taskStats.length - passedCount;
+            const passRate = (passedCount / taskStats.length) * 100;
+  
+            return {
+              taskName: task.name,
+              averageRating: averageRating.toFixed(1),
+              passRate: passRate.toFixed(1),
+            };
           }
-
-          groupedStats[taskIndex].ratings.push(stat.rating);
-          if (stat.passed) groupedStats[taskIndex].passedCount++;
-          else groupedStats[taskIndex].failedCount++;
-        });
-        console.log(groupedStats)
-        const statsWithAverages = parsedTasks
-          .map((task, index) => {
-            const statsForTask = groupedStats[index];
-            if (statsForTask) {
-              const averageRating = statsForTask.ratings.reduce((a: number, b: number) => a + b, 0) / statsForTask.ratings.length;
-              const passRate = (statsForTask.passedCount / (statsForTask.passedCount + statsForTask.failedCount)) * 100;
-              return {
-                taskName: task.name,
-                averageRating: averageRating.toFixed(1),
-                passRate: passRate.toFixed(1),
-              };
-            }
-            return null;
-          })
-          .filter(stat => stat !== null);
-
+  
+          return null;
+        }).filter(stat => stat !== null);
+  
         setTasks(parsedTasks);
         setStatistics(statsWithAverages);
       } catch (error) {
         console.error("Error fetching statistics:", error);
       }
     };
-
+  
     fetchData();
   }, []);
+  
 
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.statItem}>

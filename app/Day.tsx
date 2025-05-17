@@ -48,25 +48,21 @@ const Day = () => {
       "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"
     ];
     const fullDate = `${selectedDay.getDate()} ${monthNames[selectedDay.getMonth()]} ${selectedDay.getFullYear()}`;
-
     for (const task of allTasks) {
       const taskStartDate = task.day;
-      const taskEndDate = task.endDate ? new Date(task.endDate) : null;
+
       
       if (!taskStartDate) continue;
       const taskEndTime = new Date(taskStartDate);
       taskEndTime.setHours(task.endHour, task.endMinute, 0, 0);
       
-      const isTaskValid = !taskEndDate || taskEndTime <= taskEndDate;
+
       
       if (
-        isTaskValid &&
-        (
           (task.repetition === "one-time" && task.day === fullDate) ||
           (task.repetition === "same-weekday" && new Date(taskStartDate).getDay() === selectedDay.getDay()) ||
           (task.repetition === "weekdays" && selectedDay.getDay() >= 1 && selectedDay.getDay() <= 5) ||
           (task.repetition === "everyday")
-        )
       ) {
         newActivities.push({
           name: task.name,

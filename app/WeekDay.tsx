@@ -51,22 +51,15 @@ const WeekDay = ({ weekDay, date }: { weekDay: string; date: string }) => {
     const storedData = await AsyncStorage.getItem("task");
     const tasks = storedData ? JSON.parse(storedData) : [];
     const newActivities = [];
-
     const today = new Date();
     const todayDateString = `${date} ${today.getFullYear()}`;
     const todayDateObj = parseRomanianDate(todayDateString);
-
     if (!todayDateObj) return;
-
     for (const [i, task] of tasks.entries()) {
       const taskStartDate = task.day ? parseRomanianDate(task.day) : null;
-      const taskEndDate = task.endDate ? parseRomanianDate(task.endDate) : null;
+
 
       if (!taskStartDate) continue;
-
-      if (taskEndDate && (todayDateObj < taskStartDate || todayDateObj > taskEndDate)) {
-        continue;
-      }
 
       const taskStartTime = new Date(taskStartDate);
       taskStartTime.setHours(task.startHour, task.startMinute, 0, 0);
@@ -95,7 +88,7 @@ const WeekDay = ({ weekDay, date }: { weekDay: string; date: string }) => {
           phoneBlocked: task.phoneBlocked,
         });
 
-        if (isTaskActive) {
+        if (isTaskActive&&isTaskValid) {
 
           router.push({
             pathname: "/Timer", 

@@ -115,24 +115,31 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
     onClose(true);
 
   };
-  const handleDelete = async (close: boolean) => {
-    const storedData = await AsyncStorage.getItem("task");
-    const tasks = storedData ? JSON.parse(storedData) : [];
-
+  const handleDelete = async () => {
+    const storedTasks = await AsyncStorage.getItem("task");
+    const tasks = storedTasks ? JSON.parse(storedTasks) : [];
+    
+    const storedStats = await AsyncStorage.getItem("task_statistics");
+    const statsArray = storedStats ? JSON.parse(storedStats) : [];
+    
     if (typeof index !== "undefined" && tasks[index]) {
-      tasks.splice(index, 1)
+      tasks.splice(index, 1);
       await AsyncStorage.setItem("task", JSON.stringify(tasks));
+    
+      statsArray.splice(index, 1);
+      await AsyncStorage.setItem("task_statistics", JSON.stringify(statsArray));
+    
+      console.log("Removed task and stats at index:", index);
     }
-    if (close)
+    
       onClose();
 
   };
   async function updateTaskStorage() {
-    handleDelete(false)
     try {
       console.log(phoneBlocked)
       const storedData = await AsyncStorage.getItem('task');
-      let taskObject = storedData ? JSON.parse(storedData) : [];
+      let tasks = storedData ? JSON.parse(storedData) : [];
       const task = {
         name,
         startHour: parseInt(startHour),
@@ -148,14 +155,18 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
         repetition,
         steps,
         startDate: Date.now(),
-        endDate: null,
         weekDay: selectedWeekDay,
         day: typeof date !== "undefined" ? `${selectedDate} ${new Date().getFullYear()}` : selectedDate
       };
-      taskObject = [...taskObject, task]
-      console.log(taskObject)
-      await AsyncStorage.setItem('task', JSON.stringify(taskObject));
-      console.log('Task storage updated:', taskObject);
+      if (typeof index !== "undefined" && tasks[index]) {
+        tasks[index] = task
+      }
+      else {
+        tasks = [...tasks, task]
+      }
+      console.log(tasks)
+      await AsyncStorage.setItem('task', JSON.stringify(tasks));
+      console.log('Task storage updated:', tasks);
     } catch (error) {
       console.error('Error updating task storage:', error);
     }
@@ -302,13 +313,13 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
               </Picker>
             </View>
             <TouchableOpacity onPress={handleSubmit} style={styles.addTaskButton}>
-              <Text style={styles.closeText}>Adauga</Text>
+              <Text style={styles.closeText}>{ typeof index === "undefined" ? "Adauga" : "Salveaza schimbari"}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => onClose(false)} style={styles.closeButton}>
               <Text style={styles.closeText}>Anuleaza</Text>
             </TouchableOpacity>
             {typeof index !== "undefined" &&
-              <TouchableOpacity onPress={() => handleDelete(true)} style={styles.closeButton}>
+              <TouchableOpacity onPress={handleDelete} style={styles.closeButton}>
                 <Text style={styles.closeText}>Sterge</Text>
               </TouchableOpacity>
             }
