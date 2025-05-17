@@ -61,10 +61,10 @@ const WeekDay = ({ weekDay, date }: { weekDay: string; date: string }) => {
 
       if (!taskStartDate) continue;
 
-      const taskStartTime = new Date(taskStartDate);
+      const taskStartTime = new Date();
       taskStartTime.setHours(task.startHour, task.startMinute, 0, 0);
 
-      const taskEndTime = new Date(taskStartDate);
+      const taskEndTime = new Date();
       taskEndTime.setHours(task.endHour, task.endMinute, 0, 0);
 
       const isTaskValid =
@@ -75,7 +75,6 @@ const WeekDay = ({ weekDay, date }: { weekDay: string; date: string }) => {
 
 
       const isTaskActive = today >= taskStartTime && today <= taskEndTime;
-
       if (isTaskValid) {
         newActivities.push({
           index: i,
@@ -88,7 +87,7 @@ const WeekDay = ({ weekDay, date }: { weekDay: string; date: string }) => {
           phoneBlocked: task.phoneBlocked,
         });
 
-        if (isTaskActive&&isTaskValid) {
+        if (isTaskActive) {
 
           router.push({
             pathname: "/Timer", 
