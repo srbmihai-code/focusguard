@@ -67,46 +67,13 @@ const StatisticsPage: React.FC = () => {
     </View>
   );
 
-  const questionsAndAnswers = [
-    {
-      question: "Ce fac daca e greu să mă apuc?",
-      answers: [
-        "Începe cu un task ușor și crește treptat dificultatea.",
-        "Creează un mediu de lucru confortabil și fără distrageri pentru a te concentra mai bine.",
-        "Foloseste functia de blocarea a telefonului din aplicatie."
-      ]
-    },
-    {
-      question: "Ce fac daca sunt distras?",
-      answers: [
-        "Adauga optiunea de a avea pauze",
-        "Blochează notificările de pe telefon și alte surse de distragere pentru a te putea concentra mai mult.",
-      ]
-    },
-    {
-      question: "Ce fac daca am repetat aceleasi greseli?",
-      answers: [
-        "Foloseste mini-junalul din aplicatie pentru a nota ce probleme au fost si ce s-a imbunatatit astazi"
-      ]
-    },
-    {
-      question: "Ce fac daca mi-e greu să mențin o activitate pe termen lung",
-      answers: [
-        "Creează un sistem de recompense pentru a te motiva pe termen lung.",
-        "Revizuiește obiectivele periodic și ajustează-ți planul în funcție de progresul tău.",
-        "Găsește modalități de a face procesul mai interesant, astfel încât să rămână motivant pe termen lung."
-      ]
-    }
-  ];
-
   return (
     <ScrollView style={styles.container}>
           <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
         <Image source={require('@/assets/images/left.png')} style={styles.backIcon} />
       </TouchableOpacity>
-      <Text style={styles.header}>Statistici și Sfaturi</Text>
+      <Text style={styles.header}>Statistici</Text>
       
-      <Text style={styles.subHeader}>Statistici ale taskurilor</Text>
       {statistics.length > 0 ? (
         <FlatList
           data={statistics}
@@ -117,15 +84,6 @@ const StatisticsPage: React.FC = () => {
         <Text style={styles.noDataText}>Nu exista statistici</Text>
       )}
 
-      <Text style={styles.subHeader}>Sfaturi</Text>
-      {questionsAndAnswers.map((item, index) => (
-        <View key={index} style={styles.questionContainer}>
-          <Text style={styles.question}>{item.question}</Text>
-          {item.answers.map((answer, idx) => (
-            <Text key={idx} style={styles.answer}>{answer}</Text>
-          ))}
-        </View>
-      ))}
     </ScrollView>
   );
 };
