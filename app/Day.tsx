@@ -32,11 +32,30 @@ const Day = () => {
     calculateAvailableTimeSlots();
   }, [tasks]);
 
-  function changeSelectedDay(increment) {
+  async function changeSelectedDay(increment:number) {
+    const currentDateKey = selectedDay.toLocaleDateString("ro-RO");
+    await AsyncStorage.setItem(currentDateKey, journalEntry);
+  
     const newDate = new Date(selectedDay.getTime());
     newDate.setDate(newDate.getDate() + increment);
     setSelectedDay(newDate);
+  
+    setTimeout(() => {
+      getJournalEntry();
+    }, 0);
   }
+  
+  useEffect(() => {
+    const delaySave = setTimeout(() => {
+      const save = async () => {
+        const dateKey = selectedDay.toLocaleDateString("ro-RO");
+        await AsyncStorage.setItem(dateKey, journalEntry);
+      };
+      if (journalEntry) save();
+    }, 500);
+  
+    return () => clearTimeout(delaySave);
+  }, [journalEntry]);
 
   async function getTasks() {
     const storedData = await AsyncStorage.getItem("task");
@@ -90,56 +109,59 @@ const Day = () => {
     await AsyncStorage.setItem(dateKey, journalEntry);
   }
 
-  useEffect(() => {
-    if (journalEntry) {
-      saveJournalEntry();
-    }
-  }, [journalEntry, selectedDay]);
+function calculateAvailableTimeSlots() {
+  const startHour = 6;
+  const endHour = 20;
+  const startMinuteIndex = startHour * 60;
+  const endMinuteIndex = endHour * 60;
 
-  function calculateAvailableTimeSlots() {
-    const totalMinutesInDay = 24 * 60;
-    let takenMinutes = Array(totalMinutesInDay).fill(false);
+  let takenMinutes = Array(endMinuteIndex - startMinuteIndex).fill(false);
 
-    tasks.forEach((task) => {
-      const startMinutes = task.startHour * 60 + task.startMinute;
-      const endMinutes = task.endHour * 60 + task.endMinute;
+  tasks.forEach((task) => {
+    const taskStart = Math.max(task.startHour * 60 + task.startMinute, startMinuteIndex);
+    const taskEnd = Math.min(task.endHour * 60 + task.endMinute, endMinuteIndex);
 
-      for (let i = startMinutes; i < endMinutes; i++) {
-        takenMinutes[i] = true;
-      }
-    });
-
-    let slots = [];
-    let start = null;
-
-    for (let i = 0; i < totalMinutesInDay; i++) {
-      if (!takenMinutes[i] && start === null) {
-        start = i;
-      }
-
-      if (takenMinutes[i] && start !== null) {
-        const startTime = new Date(0);
-        startTime.setMinutes(start);
-        const endTime = new Date(0);
-        endTime.setMinutes(i);
-
-        slots.push(`${startTime.getHours()}:${startTime.getMinutes() < 10 ? "0" : ""}${startTime.getMinutes()} - ${endTime.getHours()}:${endTime.getMinutes() < 10 ? "0" : ""}${endTime.getMinutes()}`);
-
-        start = null;
+    for (let i = taskStart; i < taskEnd; i++) {
+      if (i >= startMinuteIndex && i < endMinuteIndex) {
+        takenMinutes[i - startMinuteIndex] = true;
       }
     }
+  });
 
-    if (start !== null) {
+  let slots = [];
+  let start = null;
+
+  for (let i = 0; i < takenMinutes.length; i++) {
+    if (!takenMinutes[i] && start === null) {
+      start = i + startMinuteIndex;
+    }
+    if (takenMinutes[i] && start !== null) {
       const startTime = new Date(0);
       startTime.setMinutes(start);
       const endTime = new Date(0);
-      endTime.setMinutes(totalMinutesInDay);
+      endTime.setMinutes(i + startMinuteIndex);
 
-      slots.push(`${startTime.getHours()}:${startTime.getMinutes() < 10 ? "0" : ""}${startTime.getMinutes()} - ${endTime.getHours()}:${endTime.getMinutes() < 10 ? "0" : ""}${endTime.getMinutes()}`);
+      slots.push(
+        `${startTime.getHours()}:${startTime.getMinutes().toString().padStart(2, "0")} - ${endTime.getHours()}:${endTime.getMinutes().toString().padStart(2, "0")}`
+      );
+
+      start = null;
     }
-
-    setAvailableTimeSlots(slots);
   }
+
+  if (start !== null) {
+    const startTime = new Date(0);
+    startTime.setMinutes(start);
+    const endTime = new Date(0);
+    endTime.setMinutes(endMinuteIndex);
+
+    slots.push(
+      `${startTime.getHours()}:${startTime.getMinutes().toString().padStart(2, "0")} - ${endTime.getHours()}:${endTime.getMinutes().toString().padStart(2, "0")}`
+    );
+  }
+
+  setAvailableTimeSlots(slots);
+}
 
   function handleShareAvailableSlots() {
     const slotsText = availableTimeSlots.join(", ");

@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, AppState, FlatList, StyleSheet, TouchableOpacity, Button, ScrollView } from "react-native";
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Button, ScrollView } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useLocalSearchParams } from "expo-router";
-import { queryUsageStats, EventFrequency } from "@brighthustle/react-native-usage-stats-manager";
+import { queryEvents } from "@brighthustle/react-native-usage-stats-manager";
+
 const Timer: React.FC = () => {
   const { taskIndex } = useLocalSearchParams<{ taskIndex: string }>();
   const [task, setTask] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [appState, setAppState] = useState<string>(AppState.currentState);
   const [isTaskFailed, setIsTaskFailed] = useState<boolean>(false);
   const [timerExpired, setTimerExpired] = useState<boolean>(false);
   const [isBreak, setIsBreak] = useState<boolean>(false);
   const [breaks, setBreaks] = useState<{ start: number; end: number }[]>([]);
   const [rating, setRating] = useState<number | null>(null);
+  const [taskTimestamps, setTaskTimestamps] = useState<Date[]>([]);
 
   useEffect(() => {
     const getTaskFromStorage = async () => {
@@ -34,33 +35,51 @@ const Timer: React.FC = () => {
     getTaskFromStorage();
   }, [taskIndex]);
 
-  useEffect(() => {
-    const appStateListener = AppState.addEventListener("change", (nextAppState) => {
-      setAppState(nextAppState);
-    });
+  async function logresults() {
+    const startMilliseconds = taskTimestamps[0].getTime();
+    const endMilliseconds = taskTimestamps[1].getTime();
+  
+    try {
+      const result1 = await queryEvents(startMilliseconds, endMilliseconds);
+      console.log(result1);
+  
+      const bannedApps = await AsyncStorage.getItem("banned_apps");
+      const bannedList: string[] = bannedApps ? JSON.parse(bannedApps) : [];
+  
+      const usedBannedApp = Object.values(result1).some((event: any) => {
+        const packageName = event.packageName;
+        const isAppOpenEvent = event.eventType === 0;
+        return bannedList.includes(packageName) && isAppOpenEvent;
+      });
+  
+      console.log("Banned app used:", usedBannedApp);
+      console.log("Full event data:", result1);
+      console.log("Banned list:", bannedList);
+  
+      if (usedBannedApp) {
+        setIsTaskFailed(true);
+      }
+    } catch (error) {
+      console.error("Eroare la verificarea aplicațiilor interzise:", error);
+    }
+  }
 
+  useEffect(() => {
     const interval = setInterval(() => {
       if (timeLeft > 0) {
         setTimeLeft((prev) => prev - 1);
         checkBreaks();
       } else if (!timerExpired) {
+        logresults();
         setTimerExpired(true);
-
         clearInterval(interval);
       }
     }, 1000);
 
     return () => {
       clearInterval(interval);
-      appStateListener.remove();
     };
   }, [timeLeft, timerExpired]);
-
-  useEffect(() => {
-    if (appState === "background" && !isBreak && !timerExpired && task.phoneBlocked) {
-      setIsTaskFailed(true);
-    }
-  }, [appState, isBreak, timerExpired]);
 
   const handleRating = async (star: number) => {
     setRating(star);
@@ -68,17 +87,17 @@ const Timer: React.FC = () => {
     try {
       const existingStats = await AsyncStorage.getItem("task_statistics");
       const statsArray = existingStats ? JSON.parse(existingStats) : [];
-      
+
       const newEntry = {
         rating: star,
         passed: !isTaskFailed,
       };
-      
+
       statsArray[taskIndex] = [
         ...(statsArray[taskIndex] || []),
         newEntry
       ];
-      
+
       await AsyncStorage.setItem("task_statistics", JSON.stringify(statsArray));
     } catch (error) {
       console.error("Eroare la salvarea statisticilor:", error);
@@ -89,8 +108,11 @@ const Timer: React.FC = () => {
   const calculateTimers = (task: any) => {
     const now = new Date();
     const endTime = new Date();
+    const startTime = new Date();
     endTime.setHours(task.endHour, task.endMinute, 0, 0);
+    startTime.setHours(task.startHour, task.startMinute, 0, 0);
 
+    setTaskTimestamps([startTime, endTime]);
     let totalSeconds = Math.max(Math.floor((endTime.getTime() - now.getTime()) / 1000), 0);
     setTimeLeft(totalSeconds);
 
@@ -136,7 +158,11 @@ const Timer: React.FC = () => {
         <Text style={styles.breakText}>☕ Pauză! Poți folosi telefonul 📱</Text>
       ) : timerExpired ? (
         <View>
-          <Text style={styles.successText}>🎉 Felicitări! Ai terminat task-ul!</Text>
+          {isTaskFailed ? (
+            <Text style={styles.failedText}>⚠ Task-ul a eșuat! Ai folosit o aplicație interzisă.</Text>
+          ) : (
+            <Text style={styles.successText}>🎉 Felicitări! Ai terminat task-ul fără aplicații interzise!</Text>
+          )}
           <Text style={styles.ratingText}>Cum a mers task-ul?</Text>
           <View style={styles.starContainer}>
             {[1, 2, 3, 4, 5].map((star) => (
@@ -146,14 +172,11 @@ const Timer: React.FC = () => {
             ))}
           </View>
         </View>
-      ) : isTaskFailed ? (
-        <Text style={styles.failedText}>⚠ Task-ul a eșuat! Ai ieșit din aplicație.</Text>
       ) : (
         <Text style={styles.taskActiveText}>🔥 Task-ul este activ.</Text>
       )}
 
       <Text style={styles.details}>Detalii: {task.details}</Text>
-      <Text style={styles.phoneBlock}>Telefon blocat: {task.phoneBlocked ? "Da" : "Nu"}</Text>
 
       <Text style={styles.stepsHeader}>Pașii de urmat:</Text>
       <FlatList
@@ -161,7 +184,7 @@ const Timer: React.FC = () => {
         renderItem={({ item, index }) => <Text style={styles.step}>{index + 1}. {item}</Text>}
         keyExtractor={(item, index) => index.toString()}
       />
-      <Button onPress={() => setTimeLeft(1)} title="Termina taskul"/>
+      <Button onPress={() => setTimeLeft(1)} title="Termina taskul" />
     </ScrollView>
   );
 };

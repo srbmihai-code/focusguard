@@ -7,7 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const WeekDay = ({ weekDay, date }: { weekDay: string; date: string }) => {
   const [activities, setActivities] = useState<
-    { name: string; time: string; phoneBlocked: boolean; index: number }[]
+    { name: string; time: string; index: number }[]
   >([]);
 
   useEffect(() => {
@@ -83,8 +83,7 @@ const WeekDay = ({ weekDay, date }: { weekDay: string; date: string }) => {
             .toString()
             .padStart(2, "0")}-${task.endHour}:${task.endMinute
             .toString()
-            .padStart(2, "0")}`,
-          phoneBlocked: task.phoneBlocked,
+            .padStart(2, "0")}`
         });
 
         if (isTaskActive) {
@@ -113,7 +112,6 @@ const WeekDay = ({ weekDay, date }: { weekDay: string; date: string }) => {
           <Activity
             name={activity.name}
             time={activity.time}
-            phoneBlocked={activity.phoneBlocked}
             key={activity.index}
             index={activity.index}
           />

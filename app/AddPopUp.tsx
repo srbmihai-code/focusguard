@@ -18,9 +18,6 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
   const [startMinute, setStartMinute] = useState('')
   const [endHour, setEndHour] = useState('')
   const [endMinute, setEndMinute] = useState('')
-  const [notifications, setNotifications] = useState(false)
-  const [phoneBlocked, setPhoneBlocked] = useState(false)
-  const [notificationTime, setNotificationTime] = useState('5')
   const [breaksCount, setBreaksCount] = useState('0 pauze')
   const [breaksDuration, setBreaksDuration] = useState(5)
   const [details, setDetails] = useState('')
@@ -42,8 +39,6 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
           setStartMinute(task.startMinute.toString() || "");
           setEndHour(task.endHour.toString() || "");
           setEndMinute(task.endMinute.toString() || "");
-          setNotifications(task.notifications ?? false);
-          setNotificationTime(task.notificationTime || "5");
           setBreaksCount(task.breaksCount || "0 pauze");
           setBreaksDuration(task.breaksDuration ?? 5);
           setDetails(task.details || "");
@@ -137,7 +132,6 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
   };
   async function updateTaskStorage() {
     try {
-      console.log(phoneBlocked)
       const storedData = await AsyncStorage.getItem('task');
       let tasks = storedData ? JSON.parse(storedData) : [];
       const task = {
@@ -146,11 +140,8 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
         startMinute: parseInt(startMinute),
         endHour: parseInt(endHour),
         endMinute: parseInt(endMinute),
-        notifications,
-        notificationTime,
         breaksCount,
         breaksDuration,
-        phoneBlocked,
         details,
         repetition,
         steps,
@@ -232,20 +223,6 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
               />
             </View>
 
-            <View style={styles.row}>
-              <Text>Notificare</Text>
-              <Switch value={notifications} onValueChange={setNotifications} />
-
-              {notifications && (
-                <Picker selectedValue={notificationTime} onValueChange={setNotificationTime} style={styles.picker}>
-                  {['5', '10', '15', '30'].map((time) => (
-                    <Picker.Item key={time} label={`${time} min înainte`} value={time} />
-                  ))}
-                </Picker>
-              )}
-            </View>
-            <Text>Telefon Blocat (task-ul este marcat ca esuat daca iesiti din aplicatie)</Text>
-            <Switch value={phoneBlocked} onValueChange={setPhoneBlocked} />
 
 
             <View style={styles.stepsContainer}>

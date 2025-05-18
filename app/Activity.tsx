@@ -5,11 +5,10 @@ import AddPopUp from "./AddPopUp";
 interface ActivityProps {
   name: string;
   time: string;
-  isPhoneBlocked: boolean;
   index: number
 }
 
-const Activity: React.FC<ActivityProps> = ({ name, time, isPhoneBlocked, index }) => {
+const Activity: React.FC<ActivityProps> = ({ name, time, index }) => {
   const [popUp, setPopUp] = useState(false);
   return (
     <TouchableOpacity onPress={() => setPopUp(true)}>
@@ -22,12 +21,6 @@ const Activity: React.FC<ActivityProps> = ({ name, time, isPhoneBlocked, index }
         <Text style={styles.title}>{name}</Text>
         <Text style={styles.time}>{time}</Text>
       </View>
-      {isPhoneBlocked && (
-        <Image
-          source={require("@/assets/images/smartphone.png")}
-          style={styles.image}
-        />
-      )}
 
     </View>
     </TouchableOpacity>

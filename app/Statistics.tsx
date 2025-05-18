@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+// @ts-ignore
+import { getInstalledApps } from 'react-native-get-app-list';
 
 interface TaskStat {
   taskIndex: number;
@@ -17,9 +19,17 @@ interface Task {
   endMinute: number;
 }
 
+interface AppInfo {
+  appName: string;
+  packageName: string;
+  versionName: string;
+}
+
 const StatisticsPage: React.FC = () => {
   const [statistics, setStatistics] = useState<any[]>([]);
   const [hourStats, setHourStats] = useState<any[]>([]);
+  const [apps, setApps] = useState<AppInfo[]>([]);
+  const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,7 +51,6 @@ const StatisticsPage: React.FC = () => {
             const failedCount = taskStats.length - passedCount;
             const passRate = (passedCount / taskStats.length) * 100;
 
-            // Calculate current streak
             let streak = 0;
             for (let i = taskStats.length - 1; i >= 0; i--) {
               if (taskStats[i].passed) {
@@ -64,7 +73,6 @@ const StatisticsPage: React.FC = () => {
           return null;
         }).filter(stat => stat !== null);
 
-        // Build hour-based data
         const hourMap: Record<number, number[]> = {};
         statsWithAverages.forEach(stat => {
           for (let h = stat.startHour; h <= stat.endHour; h++) {
@@ -87,6 +95,9 @@ const StatisticsPage: React.FC = () => {
 
         setStatistics(statsWithAverages);
         setHourStats(graphData);
+
+        const result = await getInstalledApps();
+        setApps(result);
       } catch (error) {
         console.error("Error fetching statistics:", error);
       }
@@ -94,6 +105,19 @@ const StatisticsPage: React.FC = () => {
 
     fetchData();
   }, []);
+
+  const toggleAppSelection = async (packageName: string) => {
+    setSelectedApps(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(packageName)) {
+        newSet.delete(packageName);
+      } else {
+        newSet.add(packageName);
+      }
+      AsyncStorage.setItem('banned_apps', JSON.stringify(Array.from(newSet)));
+      return newSet;
+    });
+  };
 
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.statItem}>
@@ -109,17 +133,21 @@ const StatisticsPage: React.FC = () => {
       <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
         <Image source={require('@/assets/images/left.png')} style={styles.backIcon} />
       </TouchableOpacity>
-
+  
       <Text style={styles.header}>Statistici</Text>
-
+  
       {statistics.length > 0 ? (
         <>
-          <FlatList
-            data={statistics}
-            renderItem={renderItem}
-            keyExtractor={(_, index) => index.toString()}
-          />
-
+          {/* Statistics List */}
+          {statistics.map((item, index) => (
+            <View key={index} style={styles.statItem}>
+              <Text style={styles.statText}>
+                {item.taskName}: {item.averageRating}⭐, {item.passRate}% completare
+                {item.streak !== 0 && ` 🔥 ${item.streak}x streak`}
+              </Text>
+            </View>
+          ))}
+  
           <Text style={styles.subHeader}>Grafic medie stele/oră</Text>
           <View style={styles.graphContainer}>
             {hourStats.map((item, index) => (
@@ -132,12 +160,24 @@ const StatisticsPage: React.FC = () => {
               </View>
             ))}
           </View>
+  
+          <Text style={styles.subHeader}>Aplicații Instalate</Text>
+          {apps.map((app, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[styles.statItem, selectedApps.has(app.packageName) && { backgroundColor: '#ffd6d6' }]}
+              onPress={() => toggleAppSelection(app.packageName)}
+            >
+              <Text style={styles.statText}>{app.appName}</Text>
+            </TouchableOpacity>
+          ))}
         </>
       ) : (
         <Text style={styles.noDataText}>Nu exista statistici</Text>
       )}
     </ScrollView>
   );
+  
 };
 
 const styles = StyleSheet.create({

@@ -2,7 +2,6 @@ import { StyleSheet, Text, View, Button, Alert } from 'react-native';
 import { router } from 'expo-router';
 import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// Make sure you import your permission check utilities
 import { checkForPermission, showUsageAccessSettings} from '@brighthustle/react-native-usage-stats-manager';
 
 const Hello = () => {
