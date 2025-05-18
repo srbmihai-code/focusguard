@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import Modal from "react-native-modal"
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker'
-
+// Poppup to add or edit a task
 interface AddPopUpProps {
   visible: boolean
   onClose: () => void
@@ -106,7 +106,6 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
       return;
     }
     updateTaskStorage()
-    // TODO check if occupied
     onClose(true);
 
   };
@@ -176,7 +175,7 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
           <View style={styles.popup}>
             <Text style={styles.title}>Adaugă activitate / obiectiv</Text>
 
-            <TextInput style={styles.input} placeholder="Nume activitate" value={name} onChangeText={setName} spellCheck={false}/>
+            <TextInput style={styles.input} placeholder="Nume activitate" value={name} onChangeText={setName} spellCheck={false} autoCorrect={false}/>
             <View style={styles.row}>
               <Text>De la:</Text>
               <TextInput
@@ -184,6 +183,7 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
                 placeholder="Oră"
                 keyboardType="numeric"
                 spellCheck={false}
+                autoCorrect={false}
                 value={startHour}
                 onChangeText={setStartHour}
                 maxLength={2}
@@ -195,6 +195,7 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
                 keyboardType="numeric"
                 value={startMinute}
                 spellCheck={false}
+                autoCorrect={false}
                 onChangeText={setStartMinute}
                 maxLength={2}
               />
@@ -252,7 +253,7 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
               ))}
             </View>
 
-            <View style={styles.row}>
+            <View style={[styles.row, styles.noMargin]}>
               <Text>Număr de pauze:</Text>
               <Picker
                 selectedValue={breaksCount}
@@ -265,7 +266,7 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
               </Picker>
             </View>
             {breaksCount[0] !== '0' &&
-              <View style={styles.row}>
+              <View style={[styles.row, styles.noMargin]}>
                 <Text>Durata pauzei:</Text>
                 <Picker
                   selectedValue={breaksDuration}
@@ -278,7 +279,7 @@ const AddPopUp: React.FC<AddPopUpProps> = ({ visible, onClose, date, weekDay, in
                 </Picker>
               </View>}
 
-            <TextInput style={[styles.input, styles.largeInput]} spellCheck={false} placeholder="Detalii opționale" multiline value={details} onChangeText={setDetails} />
+            <TextInput style={[styles.input, styles.largeInput]} spellCheck={false} autoCorrect={false} placeholder="Detalii opționale" multiline value={details} onChangeText={setDetails} />
 
             <View style={styles.row}>
               <Text>Repetiție</Text>
@@ -339,11 +340,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   input: {
+    flex: 1,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
   },
   largeInput: {
     height: 80,
@@ -352,7 +354,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginTop: 10,
     gap: 10,
   },
   button: {
@@ -389,21 +391,27 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: 'bold',
     marginBottom: 15,
+    marginTop: 10
   },
   stepInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 15,
+    gap: 10,
+    marginBottom: 6,
   },
   addButton: {
     backgroundColor: '#28a745',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addButtonText: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 20,
+    fontWeight: 'bold',
+    lineHeight: 22,
   },
   stepItem: {
     flexDirection: 'row',
@@ -423,11 +431,14 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   smallText: {
-    fontSize: 13
+    fontSize: 15,
+    marginBottom: 10,
   },
   arrow: {
     width: 50,
     height: 50,
   },
-
+  noMargin: {
+    marginTop: 0
+  }
 });

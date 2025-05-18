@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Button, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  Button,
+  SafeAreaView,
+} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useLocalSearchParams } from "expo-router";
 import { queryEvents } from "@brighthustle/react-native-usage-stats-manager";
@@ -31,31 +39,25 @@ const Timer: React.FC = () => {
         console.error("Eroare la încărcarea task-ului:", error);
       }
     };
-
     getTaskFromStorage();
   }, [taskIndex]);
 
   async function logresults() {
     const startMilliseconds = taskTimestamps[0].getTime();
     const endMilliseconds = taskTimestamps[1].getTime();
-  
+
     try {
       const result1 = await queryEvents(startMilliseconds, endMilliseconds);
-      console.log(result1);
-  
+
       const bannedApps = await AsyncStorage.getItem("banned_apps");
       const bannedList: string[] = bannedApps ? JSON.parse(bannedApps) : [];
-  
+
       const usedBannedApp = Object.values(result1).some((event: any) => {
         const packageName = event.packageName;
         const isAppOpenEvent = event.eventType === 0;
         return bannedList.includes(packageName) && isAppOpenEvent;
       });
-  
-      console.log("Banned app used:", usedBannedApp);
-      console.log("Full event data:", result1);
-      console.log("Banned list:", bannedList);
-  
+
       if (usedBannedApp) {
         setIsTaskFailed(true);
       }
@@ -93,10 +95,7 @@ const Timer: React.FC = () => {
         passed: !isTaskFailed,
       };
 
-      statsArray[taskIndex] = [
-        ...(statsArray[taskIndex] || []),
-        newEntry
-      ];
+      statsArray[taskIndex] = [...(statsArray[taskIndex] || []), newEntry];
 
       await AsyncStorage.setItem("task_statistics", JSON.stringify(statsArray));
     } catch (error) {
@@ -143,141 +142,182 @@ const Timer: React.FC = () => {
   };
 
   if (!task) {
-    return <Text>Se încarcă task-ul...</Text>;
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <Text>Se încarcă sarcina...</Text>
+      </SafeAreaView>
+    );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.taskTitle}>📝 {task.name}</Text>
-      <Text style={styles.timeText}>⏳ Timp rămas: {formatTime(timeLeft)}</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.taskTitle}>{task.name}</Text>
+        <View style={styles.sectionDivider} />
 
-      <Text style={styles.timeDetails}>Start: {task.startHour}:{task.startMinute.toString().padStart(2, "0")}</Text>
-      <Text style={styles.timeDetails}>Sfârșit: {task.endHour}:{task.endMinute.toString().padStart(2, "0")}</Text>
+        <Text style={styles.timeText}>⌛Timp rămas: {formatTime(timeLeft)}</Text>
+        <Text style={styles.timeDetails}>
+          Start: {task.startHour}:{task.startMinute.toString().padStart(2, "0")}
+        </Text>
+        <Text style={styles.timeDetails}>
+          Sfârșit: {task.endHour}:{task.endMinute.toString().padStart(2, "0")}
+        </Text>
 
-      {isBreak ? (
-        <Text style={styles.breakText}>☕ Pauză! Poți folosi telefonul 📱</Text>
-      ) : timerExpired ? (
-        <View>
-          {isTaskFailed ? (
-            <Text style={styles.failedText}>⚠ Task-ul a eșuat! Ai folosit o aplicație interzisă.</Text>
-          ) : (
-            <Text style={styles.successText}>🎉 Felicitări! Ai terminat task-ul fără aplicații interzise!</Text>
-          )}
-          <Text style={styles.ratingText}>Cum a mers task-ul?</Text>
-          <View style={styles.starContainer}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <TouchableOpacity key={star} onPress={() => handleRating(star)}>
-                <Text style={[styles.star, star <= (rating ?? 0) ? styles.starSelected : {}]}>⭐</Text>
-              </TouchableOpacity>
-            ))}
+        <View style={styles.sectionDivider} />
+
+        {isBreak ? (
+          <Text style={styles.breakText}>Pauză activă – poți folosi telefonul</Text>
+        ) : timerExpired ? (
+          <View style={styles.resultSection}>
+            {isTaskFailed ? (
+              <Text style={styles.failedText}>
+                Task-ul a eșuat. A fost detectată o aplicație interzisă.
+              </Text>
+            ) : (
+              <Text style={styles.successText}>
+                🎉 Task finalizat cu succes, fără aplicații interzise.
+              </Text>
+            )}
+            <Text style={styles.ratingText}>Cum a fost sarcina?</Text>
+            <View style={styles.starContainer}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity key={star} onPress={() => handleRating(star)}>
+                  <Text
+                    style={[
+                      styles.star,
+                      star <= (rating ?? 0) ? styles.starSelected : {},
+                    ]}
+                  >
+                    ★
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
+        ) : (
+          <Text style={styles.taskActiveText}>🔄Sarcina este în desfășurare</Text>
+        )}
+
+        <View style={styles.sectionDivider} />
+
+        <Text style={styles.details}>Detalii: {task.details}</Text>
+
+        <Text style={styles.stepsHeader}>Pași de urmat:</Text>
+
+        <FlatList
+          data={task.steps}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item, index }) => (
+            <Text style={styles.step}>
+              {index + 1}. {item}
+            </Text>
+          )}
+          scrollEnabled={false}
+        />
+        {/* Debug Button */}
+        <View style={styles.footerButtonContainer}>
+          <TouchableOpacity onPress={() => setTimeLeft(1)} style={styles.footerButton} />
         </View>
-      ) : (
-        <Text style={styles.taskActiveText}>🔥 Task-ul este activ.</Text>
-      )}
-
-      <Text style={styles.details}>Detalii: {task.details}</Text>
-
-      <Text style={styles.stepsHeader}>Pașii de urmat:</Text>
-      <FlatList
-        data={task.steps}
-        renderItem={({ item, index }) => <Text style={styles.step}>{index + 1}. {item}</Text>}
-        keyExtractor={(item, index) => index.toString()}
-      />
-      <Button onPress={() => setTimeLeft(1)} title="Termina taskul" />
-    </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 30,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    margin: 20,
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 3,
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f9f9f9",
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
+  container: {
+    padding: 20,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    margin: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: "#e0e0e0",
+    marginVertical: 12,
+  },
   taskTitle: {
-    fontSize: 30,
-    fontWeight: "bold",
-    marginBottom: 12,
+    fontSize: 28,
+    fontWeight: "700",
+    marginBottom: 10,
     textAlign: "center",
   },
   timeText: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  timeDetails: {
-    fontSize: 22,
-    color: "#666",
+    fontSize: 26,
+    fontWeight: "600",
+    color: "#222",
     marginBottom: 8,
     textAlign: "center",
   },
+  timeDetails: {
+    fontSize: 18,
+    color: "#555",
+    textAlign: "center",
+  },
   breakText: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "green",
-    marginBottom: 15,
+    fontSize: 20,
+    fontWeight: "500",
+    color: "#2e7d32",
+    marginTop: 15,
     textAlign: "center",
   },
   failedText: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "red",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  successText: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "black",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  taskActiveText: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: "black",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  details: {
-    fontSize: 18,
-    fontStyle: "italic",
-    color: "#555",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  phoneBlock: {
-    fontSize: 18,
-    color: "#000",
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  stepsHeader: {
-    fontSize: 22,
-    fontWeight: "bold",
+    fontWeight: "600",
+    color: "#c62828",
     marginBottom: 12,
     textAlign: "center",
   },
-  step: {
+  successText: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#2e7d32",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  taskActiveText: {
     fontSize: 18,
+    fontWeight: "500",
     color: "#333",
-    paddingVertical: 4,
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  details: {
+    fontSize: 16,
+    fontStyle: "italic",
+    color: "#444",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  stepsHeader: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  step: {
+    fontSize: 16,
+    color: "#333",
+    paddingVertical: 6,
     textAlign: "center",
   },
   ratingText: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 10,
+    fontSize: 20,
+    fontWeight: "600",
+    marginTop: 10,
     textAlign: "center",
   },
   starContainer: {
@@ -287,11 +327,28 @@ const styles = StyleSheet.create({
   },
   star: {
     fontSize: 30,
-    marginHorizontal: 10,
+    marginHorizontal: 6,
+    color: "#bbb",
   },
   starSelected: {
-    color: "gold",
+    color: "#f4b400",
+  },
+  resultSection: {
+    marginTop: 10,
+    alignItems: "center",
+    gap: 8,
+  },
+  footerButtonContainer: {
+    alignItems: "center",
+    marginTop: 16,
+  },
+  footerButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#ccc",
   },
 });
+
 
 export default Timer;

@@ -1,6 +1,7 @@
 import { Slot } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollView,View } from "react-native";
+import React from "react";
 
 export default function RootLayout() {
   return <SafeAreaView style={{ flex: 1 }}>

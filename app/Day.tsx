@@ -75,8 +75,6 @@ const Day = () => {
       const taskEndTime = new Date(taskStartDate);
       taskEndTime.setHours(task.endHour, task.endMinute, 0, 0);
       
-
-      
       if (
           (task.repetition === "one-time" && task.day === fullDate) ||
           (task.repetition === "same-weekday" && new Date(taskStartDate).getDay() === selectedDay.getDay()) ||
@@ -222,7 +220,7 @@ function calculateAvailableTimeSlots() {
       </View>
 
       <TouchableOpacity onPress={handleShareAvailableSlots} style={styles.shareButton}>
-        <Text style={styles.shareButtonText}>Distribuie perioadele libere.</Text>
+        <Text style={styles.shareButtonText}>Distribuie perioadele libere</Text>
       </TouchableOpacity>
     </View>
   );

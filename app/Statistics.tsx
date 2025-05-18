@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 // @ts-ignore
@@ -48,7 +48,6 @@ const StatisticsPage: React.FC = () => {
             const averageRating = totalRatings / taskStats.length;
 
             const passedCount = taskStats.filter(stat => stat.passed).length;
-            const failedCount = taskStats.length - passedCount;
             const passRate = (passedCount / taskStats.length) * 100;
 
             let streak = 0;
@@ -119,35 +118,33 @@ const StatisticsPage: React.FC = () => {
     });
   };
 
-  const renderItem = ({ item }: { item: any }) => (
-    <View style={styles.statItem}>
-      <Text style={styles.statText}>
-        {item.taskName}: {item.averageRating}⭐, {item.passRate}% completare
-        {item.streak !== 0 && ` 🔥 ${item.streak}x streak`}
-      </Text>
-    </View>
-  );
-
   return (
     <ScrollView style={styles.container}>
-      <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
-        <Image source={require('@/assets/images/left.png')} style={styles.backIcon} />
-      </TouchableOpacity>
-  
-      <Text style={styles.header}>Statistici</Text>
-  
+<View style={styles.headerRow}>
+  <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
+    <Image source={require('@/assets/images/left.png')} style={styles.backIcon} />
+  </TouchableOpacity>
+  <Text style={styles.header}>Statistici</Text>
+</View>
+
       {statistics.length > 0 ? (
         <>
-          {/* Statistics List */}
+          <View style={styles.statRow}>
+            <Text style={styles.statHeaderText}>Activitate</Text>
+            <Text style={styles.statHeaderText}>★ Medie</Text>
+            <Text style={styles.statHeaderText}>% Reușită</Text>
+            <Text style={styles.statHeaderText}>Streak</Text>
+          </View>
+
           {statistics.map((item, index) => (
-            <View key={index} style={styles.statItem}>
-              <Text style={styles.statText}>
-                {item.taskName}: {item.averageRating}⭐, {item.passRate}% completare
-                {item.streak !== 0 && ` 🔥 ${item.streak}x streak`}
-              </Text>
+            <View key={index} style={styles.statRow}>
+              <Text style={styles.statText}>{item.taskName}</Text>
+              <Text style={styles.statText}>{item.averageRating}⭐</Text>
+              <Text style={styles.statText}>{item.passRate}%</Text>
+              <Text style={styles.statText}>{item.streak !== 0 ? `🔥 ${item.streak}x` : '-'}</Text>
             </View>
           ))}
-  
+
           <Text style={styles.subHeader}>Grafic medie stele/oră</Text>
           <View style={styles.graphContainer}>
             {hourStats.map((item, index) => (
@@ -160,53 +157,84 @@ const StatisticsPage: React.FC = () => {
               </View>
             ))}
           </View>
-  
-          <Text style={styles.subHeader}>Aplicații Instalate</Text>
-          {apps.map((app, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[styles.statItem, selectedApps.has(app.packageName) && { backgroundColor: '#ffd6d6' }]}
-              onPress={() => toggleAppSelection(app.packageName)}
-            >
-              <Text style={styles.statText}>{app.appName}</Text>
-            </TouchableOpacity>
-          ))}
         </>
       ) : (
-        <Text style={styles.noDataText}>Nu exista statistici</Text>
+        <Text style={styles.noDataText}>Nu există statistici</Text>
       )}
+
+      <Text style={styles.subHeader}>Alege aplicații interzise în timpul activităților</Text>
+      {apps.map((app, index) => (
+        <TouchableOpacity
+          key={index}
+          style={[styles.statItem, selectedApps.has(app.packageName) && styles.appSelected]}
+          onPress={() => toggleAppSelection(app.packageName)}
+        >
+          <Text style={styles.statText}>{app.appName}</Text>
+        </TouchableOpacity>
+      ))}
     </ScrollView>
   );
-  
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
+    paddingTop: 5,
     paddingHorizontal: 16,
     backgroundColor: '#f0f0f0',
   },
+  headerRow: {
+    position: 'relative',
+    height: 40,
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  backButton: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40, 
+    height: 40,
+  },
+  backIcon: {
+    width: 30,
+    height: 30,
+  },
   header: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
     fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
   },
   subHeader: {
     fontSize: 18,
     fontWeight: 'bold',
     marginVertical: 16,
   },
-  statItem: {
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     backgroundColor: '#fff',
     padding: 10,
     marginBottom: 10,
     borderRadius: 8,
     elevation: 3,
   },
+  statHeaderText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    flex: 1,
+    color: '#444',
+  },
   statText: {
     fontSize: 16,
+    flex: 1,
     color: '#333',
   },
   noDataText: {
@@ -244,16 +272,17 @@ const styles = StyleSheet.create({
     color: '#333',
     width: 50,
   },
-  backButton: {
-    position: 'absolute',
-    top: 20,
-    left: 10,
-    zIndex: 1,
+  statItem: {
+    backgroundColor: '#fff',
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 8,
+    elevation: 3,
   },
-  backIcon: {
-    width: 30,
-    height: 30,
+  appSelected: {
+    backgroundColor: '#ffd6d6',
   },
 });
+
 
 export default StatisticsPage;

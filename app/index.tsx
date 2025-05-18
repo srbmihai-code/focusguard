@@ -101,12 +101,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   button: {
-    paddingVertical: 8,
+    paddingVertical: 15,
     paddingHorizontal: 1,
     borderRadius: 6,
     width: 100,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    backgroundColor: '#DDDDDD',
   },
   activeButton: {
     backgroundColor: '#4CAF50',
@@ -124,16 +125,18 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   statisticsButton: {
-    backgroundColor: '#1E90FF',
-    paddingVertical: 16,
+    backgroundColor: '#5ee2ff',
     paddingHorizontal: 20,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 55,
   },
   statisticsButtonText: {
     color: '#FFF',
     fontWeight: 'bold',
-    fontSize: 20,
+    fontSize: 26,
+    textAlignVertical: 'center',
   },
   debugButton: {
     marginTop: 8,

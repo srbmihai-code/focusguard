@@ -46,7 +46,7 @@ const WeekDay = ({ weekDay, date }: { weekDay: string; date: string }) => {
 
     return new Date(year, month, day);
   }
-
+  // Gets tasks for a day
   async function getTasks() {
     const storedData = await AsyncStorage.getItem("task");
     const tasks = storedData ? JSON.parse(storedData) : [];
