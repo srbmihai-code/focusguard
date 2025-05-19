@@ -97,6 +97,10 @@ const StatisticsPage: React.FC = () => {
 
         const result = await getInstalledApps();
         setApps(result);
+
+        const storedBannedApps = await AsyncStorage.getItem('banned_apps');
+        const bannedAppsArray: string[] = storedBannedApps ? JSON.parse(storedBannedApps) : [];
+        setSelectedApps(new Set(bannedAppsArray));
       } catch (error) {
         console.error("Error fetching statistics:", error);
       }
@@ -120,12 +124,12 @@ const StatisticsPage: React.FC = () => {
 
   return (
     <ScrollView style={styles.container}>
-<View style={styles.headerRow}>
-  <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
-    <Image source={require('@/assets/images/left.png')} style={styles.backIcon} />
-  </TouchableOpacity>
-  <Text style={styles.header}>Statistici</Text>
-</View>
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
+          <Image source={require('@/assets/images/left.png')} style={styles.backIcon} />
+        </TouchableOpacity>
+        <Text style={styles.header}>Statistici</Text>
+      </View>
 
       {statistics.length > 0 ? (
         <>
@@ -283,6 +287,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffd6d6',
   },
 });
-
 
 export default StatisticsPage;
