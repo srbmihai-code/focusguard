@@ -122,6 +122,17 @@ const StatisticsPage: React.FC = () => {
     });
   };
 
+  const selectAllApps = async () => {
+    const newSet = new Set(apps.filter(app => app.appName !== 'focusguard').map(app => app.packageName));
+    setSelectedApps(newSet);
+    await AsyncStorage.setItem('banned_apps', JSON.stringify(Array.from(newSet)));
+  };
+
+  const deselectAllApps = async () => {
+    setSelectedApps(new Set());
+    await AsyncStorage.setItem('banned_apps', JSON.stringify([]));
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.headerRow}>
@@ -167,15 +178,27 @@ const StatisticsPage: React.FC = () => {
       )}
 
       <Text style={styles.subHeader}>Alege aplicații interzise în timpul activităților</Text>
-      {apps.map((app, index) => (
-        <TouchableOpacity
-          key={index}
-          style={[styles.statItem, selectedApps.has(app.packageName) && styles.appSelected]}
-          onPress={() => toggleAppSelection(app.packageName)}
-        >
-          <Text style={styles.statText}>{app.appName}</Text>
+
+      <View style={styles.buttonRow}>
+        <TouchableOpacity onPress={selectAllApps} style={styles.selectButton}>
+          <Text style={styles.buttonText}>Selectează tot</Text>
         </TouchableOpacity>
-      ))}
+        <TouchableOpacity onPress={deselectAllApps} style={styles.deselectButton}>
+          <Text style={styles.buttonText}>Deselectează tot</Text>
+        </TouchableOpacity>
+      </View>
+
+      {apps
+  .filter(app => app.appName !== 'focusguard')
+  .map((app, index) => (
+    <TouchableOpacity
+      key={index}
+      style={[styles.statItem, selectedApps.has(app.packageName) && styles.appSelected]}
+      onPress={() => toggleAppSelection(app.packageName)}
+    >
+      <Text style={styles.statText}>{app.appName}</Text>
+    </TouchableOpacity>
+))}
     </ScrollView>
   );
 };
@@ -201,7 +224,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    width: 40, 
+    width: 40,
     height: 40,
   },
   backIcon: {
@@ -285,6 +308,33 @@ const styles = StyleSheet.create({
   },
   appSelected: {
     backgroundColor: '#ffd6d6',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  selectButton: {
+    flex: 1,
+    backgroundColor: '#d0f0d0',
+    padding: 10,
+    marginRight: 8,
+    borderRadius: 8,
+    elevation: 3,
+  },
+  deselectButton: {
+    flex: 1,
+    backgroundColor: '#f0d0d0',
+    padding: 10,
+    marginLeft: 8,
+    borderRadius: 8,
+    elevation: 3,
+  },
+  buttonText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
   },
 });
 

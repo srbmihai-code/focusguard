@@ -35,3 +35,4 @@ yarn-error.*
 
 app-example
 android
+expo-env.d.ts
